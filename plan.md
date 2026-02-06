@@ -1,8 +1,8 @@
 # FileShare System OOAD Plan (Java)
 
-## 1) Requirement (Build a FileShare System (save files, restore files, delete files, listFiles, Search) with encryption)
+## 1) Requirement (Build a FileShare System (save files, retrieve files, delete files, listFiles, Search) with encryption)
 - Save file (encrypt + store metadata)
-- Restore file (decrypt + return)
+- Retrieve file (decrypt + return)
 - Delete file (logical + physical)
 - List files (per user / scope)
 - Search (by name, tags, owner, date, size)
@@ -15,7 +15,7 @@
 - `SearchIndexEntry` (fileId, tokens, tags)
 
 ## 3) Service layer (core OOAD classes)
-- `FileService` (save, restore, delete, list, search)
+- `FileService` (save, retrieve, delete, list, search)
 - `EncryptionService` (encrypt, decrypt, generateKey, rotateKey)
 - `StorageService` (store, retrieve, delete)
 - `MetadataRepository` (CRUD for `File`, `FileVersion`)
@@ -34,7 +34,7 @@
   3) `StorageService.store(ciphertext)`  
   4) `MetadataRepository.create(File, FileVersion)`  
   5) `SearchService.index()`
-- **Restore**
+- **Retrieve**
   1) authorize  
   2) `StorageService.retrieve()`  
   3) `EncryptionService.decrypt()`

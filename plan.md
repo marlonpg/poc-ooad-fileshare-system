@@ -9,30 +9,30 @@
 
 ## 2) Domain model (key entities)
 - `User` (id, name, roles)
-- `FileAsset` (id, ownerId, name, size, createdAt, checksum, status)
+- `File` (id, ownerId, name, size, createdAt, checksum, status)
 - `FileVersion` (id, fileId, version, encryptedPath, keyId, iv, checksum)
-- `AccessPolicy` (fileId, grants)
+- `AccessPermission` (fileId, grants)
 - `SearchIndexEntry` (fileId, tokens, tags)
 
 ## 3) Service layer (core OOAD classes)
 - `FileService` (save, restore, delete, list, search)
 - `EncryptionService` (encrypt, decrypt, generateKey, rotateKey)
 - `StorageService` (store, retrieve, delete)
-- `MetadataRepository` (CRUD for `FileAsset`, `FileVersion`)
+- `MetadataRepository` (CRUD for `File`, `FileVersion`)
 - `SearchService` (index, query)
 - `AuditService` (log actions)
 
 ## 4) Key relationships
 - `FileService` orchestrates `EncryptionService`, `StorageService`, `MetadataRepository`, `SearchService`.
-- `FileAsset` has many `FileVersion`.
-- `AccessPolicy` linked to `FileAsset`.
+- `File` has many `FileVersion`.
+- `AccessPermission` linked to `File`.
 
 ## 5) Use-case flows (sequence outline)
 - **Save**
   1) validate input + permission  
   2) `EncryptionService.encrypt(stream)`  
   3) `StorageService.store(ciphertext)`  
-  4) `MetadataRepository.create(FileAsset, FileVersion)`  
+  4) `MetadataRepository.create(File, FileVersion)`  
   5) `SearchService.index()`
 - **Restore**
   1) authorize  
@@ -40,7 +40,7 @@
   3) `EncryptionService.decrypt()`
 - **Delete**
   1) authorize  
-  2) mark `FileAsset.status=DELETED`  
+  2) mark `File.status=DELETED`  
   3) `StorageService.delete()`  
   4) de-index
 - **List/Search**

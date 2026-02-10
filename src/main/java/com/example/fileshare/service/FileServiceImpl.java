@@ -2,24 +2,29 @@ package com.example.fileshare.service;
 
 import com.example.fileshare.domain.File;
 import com.example.fileshare.domain.FileVersion;
+import com.example.fileshare.service.model.EncryptionResult;
 import com.example.fileshare.service.model.FileRequest;
 import com.example.fileshare.service.model.FileResponse;
 
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.security.MessageDigest;
-import java.time.LocalDateTime;
 import java.util.*;
 
 
 public class FileServiceImpl implements FileService {
+
+    private static final int IV_SIZE = 12;
     
+    private final EncryptionService encryptionService;
     private final Map<String, File> fileStore;
     private final Map<String, List<FileVersion>> versionStore;
     private final Map<String, byte[]> encryptedDataStore;
     private final Map<String, Set<String>> searchIndex;
     
     public FileServiceImpl() {
+        this.encryptionService = new AesGcmEncryptionService();
         this.fileStore = new HashMap<>();
         this.versionStore = new HashMap<>();
         this.encryptedDataStore = new HashMap<>();
@@ -31,6 +36,7 @@ public class FileServiceImpl implements FileService {
         try {
             byte[] fileData = readInputStream(request.getFileData());
             String checksum = calculateChecksum(fileData);
+            String keyId = encryptionService.generateKey();
 
             File file = new File(
                     request.getOwnerId(),
@@ -39,18 +45,23 @@ public class FileServiceImpl implements FileService {
                     checksum
             );
             String fileId = file.getId();
-            
-            byte[] encryptedData = simpleEncrypt(fileData);
-            String encryptedKey = "key-" + fileId;
-            encryptedDataStore.put(encryptedKey, encryptedData);
 
-            String iv = "iv-" + UUID.randomUUID().toString();
+            ByteArrayOutputStream encryptedBuffer = new ByteArrayOutputStream();
+            EncryptionResult encryptionResult = encryptionService.encrypt(
+                keyId,
+                new ByteArrayInputStream(fileData),
+                encryptedBuffer
+            );
+            byte[] encryptedData = encryptedBuffer.toByteArray();
+            String storageKey = "enc-" + fileId;
+            encryptedDataStore.put(storageKey, encryptedData);
+
             FileVersion version = new FileVersion(
                     fileId,
                     1,
-                    encryptedKey,
-                    encryptedKey,
-                    iv,
+                storageKey,
+                keyId,
+                encryptionResult.getIvBase64(),
                     checksum
             );
             
@@ -100,10 +111,24 @@ public class FileServiceImpl implements FileService {
             if (encryptedData == null) {
                 throw new IllegalArgumentException("Encrypted data not found for file: " + fileId);
             }
+            if (encryptedData.length <= IV_SIZE) {
+                throw new IllegalArgumentException("Encrypted data is too short for file: " + fileId);
+            }
 
-            byte[] decryptedData = simpleDecrypt(encryptedData);
-            
-            return new java.io.ByteArrayInputStream(decryptedData);
+            ByteArrayInputStream cipherInput = new ByteArrayInputStream(
+                    encryptedData,
+                    IV_SIZE,
+                    encryptedData.length - IV_SIZE
+            );
+            ByteArrayOutputStream decryptedBuffer = new ByteArrayOutputStream();
+            encryptionService.decrypt(
+                    latestVersion.getKeyId(),
+                    latestVersion.getIv(),
+                    cipherInput,
+                    decryptedBuffer
+            );
+
+            return new ByteArrayInputStream(decryptedBuffer.toByteArray());
             
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve file", e);
@@ -197,22 +222,6 @@ public class FileServiceImpl implements FileService {
         searchIndex.put(fileId, tokens);
     }
     
-    private byte[] simpleEncrypt(byte[] data) {
-        byte[] encrypted = new byte[data.length];
-        byte key = (byte) 0xAB;
-        
-        for (int i = 0; i < data.length; i++) {
-            encrypted[i] = (byte) (data[i] ^ key);
-        }
-        
-        return encrypted;
-    }
-    
-    private byte[] simpleDecrypt(byte[] encryptedData) {
-        return simpleEncrypt(encryptedData);
-    }
-    
-
     private String calculateChecksum(byte[] data) throws Exception {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest(data);

@@ -51,6 +51,7 @@ public class AesGcmEncryptionService implements EncryptionService {
         SecretKey key = retrieveKey(keyId);
 
         try {
+            // IV is a random, non-secret value that makes each encryption unique.
             byte[] iv = new byte[IV_SIZE];
             secureRandom.nextBytes(iv);
 

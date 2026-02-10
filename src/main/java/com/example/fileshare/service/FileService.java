@@ -1,9 +1,9 @@
 package com.example.fileshare.service;
 
+import com.example.fileshare.domain.File;
 import com.example.fileshare.service.model.FileRequest;
 import com.example.fileshare.service.model.FileResponse;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 

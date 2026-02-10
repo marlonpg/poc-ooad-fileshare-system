@@ -208,7 +208,6 @@ public class FileServiceImpl implements FileService {
     
     private void indexFile(String fileId, String fileName, String ownerId) {
         Set<String> tokens = new HashSet<>();
-        
 
         String[] parts = fileName.toLowerCase().split("[\\s._-]+");
         for (String part : parts) {

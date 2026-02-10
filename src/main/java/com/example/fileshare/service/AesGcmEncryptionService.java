@@ -1,7 +1,6 @@
 package com.example.fileshare.service;
 
 import com.example.fileshare.service.model.EncryptionResult;
-
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -58,19 +57,20 @@ public class AesGcmEncryptionService implements EncryptionService {
             Cipher cipher = Cipher.getInstance(CIPHER_INSTANCE);
             GCMParameterSpec gcmSpec = new GCMParameterSpec(TAG_SIZE, iv);
             cipher.init(Cipher.ENCRYPT_MODE, key, gcmSpec);
-
+            // Write IV at the beginning of the output stream.
             output.write(iv);
             output.flush();
 
             byte[] buffer = new byte[BUFFER_SIZE];
             int bytesRead;
             while ((bytesRead = input.read(buffer)) != -1) {
+                //encrypt file by chunks
                 byte[] encrypted = cipher.update(buffer, 0, bytesRead);
                 if (encrypted != null) {
                     output.write(encrypted);
                 }
             }
-
+            //finishes and appends the auth tag.
             byte[] finalBlock = cipher.doFinal();
             output.write(finalBlock);
             output.flush();

@@ -83,6 +83,6 @@ public class FileResponse {
                 "fileId='" + fileId + '\'' +
                 ", fileName='" + fileName + '\'' +
                 ", status='" + status + '\'' +
-                "}';
+                "}";
     }
 }

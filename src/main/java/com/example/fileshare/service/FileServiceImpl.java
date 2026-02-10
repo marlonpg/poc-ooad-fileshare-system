@@ -24,7 +24,7 @@ public class FileServiceImpl implements FileService {
     private final Map<String, Set<String>> searchIndex;
     
     public FileServiceImpl() {
-        this.encryptionService = new AesGcmEncryptionService();
+        this.encryptionService = new EncryptionServiceImpl();
         this.fileStore = new HashMap<>();
         this.versionStore = new HashMap<>();
         this.encryptedDataStore = new HashMap<>();
